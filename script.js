@@ -14,3 +14,53 @@ let isCheckpointCollisionDetectionActive = true; // In the game, the player will
 const proportionalSize = (size) => {
   return innerHeight < 500 ? Math.ceil((size / 500) * innerHeight) : size; // The width and the height of the main player, platforms and checkpoints will be proportional sized relative to the innerHeight of the browser screen. The goal is to make the game responsive and visually consistent across different screen sizes.
 };
+
+// to define some characteristics for the main player of the game.
+class Player {
+  constructor() {
+    // define the player's position, velocity, width, and height values.
+    this.position = {
+      // the proportionalSize function here to make sure that the player's position is always proportional to the screen size. This is important because you want the player to be able to move around the screen regardless of the screen size.
+      x: proportionalSize(10),
+      y: proportionalSize(400),
+    };
+    this.velocity = {
+      // The velocity property will be used to store the player's speed in the x and y directions.
+      x: 0,
+      y: 0,
+    };
+    this.width = proportionalSize(40); // the proportionalSize() function here to set the width and height properties of your class to be proportional to the height of the screen.
+    this.height = proportionalSize(40);
+  }
+  draw() {
+    // draw() method, which will be responsible for creating the player's width, height, position, and fill color.
+    ctx.fillStyle = "#99c9ff"; // to set the color for your player.
+    ctx.fillRect(this.position.x, this.position.y, this.width, this.height); // to create the player's shape by calling the fillRect() method on the ctx object which you instantiated earlier. Example Code: fillRect(x, y, width, height)
+  }
+  update() {
+    // update() method which will be responsible for updating the player's position and velocity as it moves throughout the game.
+    this.draw(); // draw() method to ensure that the player is continually drawn on the screen as the game updates.
+    this.position.x += this.velocity.x; // When the player moves to the right, you will need to adjust its velocity.
+    this.position.y += this.velocity.y; // When the player jumps up, you will need to add the logic for adjusting its velocity.
+    if (this.position.y + this.height + this.velocity.y <= canvas.height) {
+      // Right now, when the player jumps up, it is possible for it to move past the height of the canvas. To fix that, you will need to add a condition to stop the player from falling past the height of the canvas.
+      if (this.position.y < 0) {
+        this.position.y = 0;
+        this.velocity.y = gravity;
+      }
+      this.velocity.y += gravity;
+    } else {
+      this.velocity.y = 0;
+    }
+    if (this.position.x < this.width) {
+      // to ensure that the player stays within the boundaries of the canvas screen and doesn't move too far off to the left.
+      this.position.x = this.width;
+    }
+    if (this.position.x >= canvas.width - this.width * 2) {
+      // to check if the player's x position has exceeded the right edge of the canvas. If it has, you will need to set the player's x position to the maximum value so the player does not accidentally go off screen to the right.
+      this.position.x = canvas.width - this.width * 2; // This will ensure that the player's x position will never exceed the right edge of the canvas.
+    }
+  }
+}
+
+const player = new Player();
