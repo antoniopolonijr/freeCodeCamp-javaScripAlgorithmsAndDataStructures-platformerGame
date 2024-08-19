@@ -64,3 +64,12 @@ class Player {
 }
 
 const player = new Player();
+
+// to see your new player drawn on the screen.
+const startGame = () => {
+  canvas.style.display = "block"; // to display the canvas element
+  startScreen.style.display = "none"; // to hide the startScreen container.
+  player.draw(); // To visualize the player on the screen, you need to draw it on the canvas.
+};
+
+startBtn.addEventListener("click", startGame); // add the functionality for the start game button.
