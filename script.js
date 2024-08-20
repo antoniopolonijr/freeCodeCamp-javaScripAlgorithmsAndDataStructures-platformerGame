@@ -94,6 +94,29 @@ class Platform {
   }
 }
 
+// logic for the checkpoints. When a player collides with a checkpoint, the checkpoint screen should appear.
+class CheckPoint {
+  constructor(x, y, z) {
+    this.position = {
+      x,
+      y,
+    };
+    this.width = proportionalSize(40);
+    this.height = proportionalSize(70);
+    this.claimed = false; // to check if the player has reached the checkpoint.
+  }
+  draw() {
+    ctx.fillStyle = "#f1be32";
+    ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+  }
+  claim() {
+    this.width = 0;
+    this.height = 0;
+    this.position.y = Infinity;
+    this.claimed = true;
+  }
+}
+
 const player = new Player();
 
 // list of positions for the platforms.
@@ -117,11 +140,25 @@ const platforms = platformPositions.map(
   (platform) => new Platform(platform.x, platform.y)
 );
 
+const checkpointPositions = [
+  { x: 1170, y: proportionalSize(80), z: 1 },
+  { x: 2900, y: proportionalSize(330), z: 2 },
+  { x: 4800, y: proportionalSize(80), z: 3 },
+];
+
+// to create a list of new checkpoint instances using the CheckPoint class.
+const checkpoints = checkpointPositions.map(
+  (checkpoint) => new CheckPoint(checkpoint.x, checkpoint.y, checkpoint.z)
+);
+
 // functionality for moving the player across the screen
 const animate = () => {
   requestAnimationFrame(animate); // The requestAnimationFrame() web API, takes in a callback and is used to update the animation on the screen. The animate function will be responsible for updating the player's position and continually drawing it on the canvas.
   ctx.clearRect(0, 0, canvas.width, canvas.height); // As the player moves through the game, you will need to clear the canvas before rendering the next frame of the animation. You can use the clearRect() Web API to accomplish this. It takes in an x, y, width, and height arguments.
   platforms.forEach((platform) => platform.draw()); // to draw each of the platforms onto the canvas.
+  checkpoints.forEach((checkpoint) => {
+    checkpoint.draw();
+  }); // to draw each of the checkpoints onto the canvas.
   player.update(); // to update the player's position as it moves throughout the game.
   if (keys.rightKey.pressed && player.position.x < proportionalSize(400)) {
     // to add the logic for increasing or decreasing a player's velocity based on if they move to the left or right of the screen. You need to use the proportionalSize function here to make sure the player's x position is always proportional to the screen size. // Remember that the this keyword should not be used here because that is only for the Player class and not for the player object.
@@ -138,9 +175,15 @@ const animate = () => {
       platforms.forEach((platform) => {
         platform.position.x -= 5;
       });
+      checkpoints.forEach((checkpoint) => {
+        checkpoint.position.x -= 5;
+      });
     } else if (keys.leftKey.pressed && isCheckpointCollisionDetectionActive) {
       platforms.forEach((platform) => {
         platform.position.x += 5;
+      });
+      checkpoints.forEach((checkpoint) => {
+        checkpoint.position.x += 5;
       });
     }
   }
@@ -171,6 +214,34 @@ const animate = () => {
       player.position.y = platform.position.y + player.height;
       player.velocity.y = gravity;
     } // Now, when you start the game, you will be able to jump underneath the platform and collide with it.
+  });
+  // display the checkpoint screen when the player reaches a checkpoint.
+  checkpoints.forEach((checkpoint, index, checkpoints) => {
+    const checkpointDetectionRules = [
+      player.position.x >= checkpoint.position.x,
+      player.position.y >= checkpoint.position.y,
+      player.position.y + player.height <=
+        checkpoint.position.y + checkpoint.height,
+      isCheckpointCollisionDetectionActive,
+      player.position.x - player.width <=
+        checkpoint.position.x - checkpoint.width + player.width * 0.9, // This will ensure that the player is close enough to the checkpoint to claim it.
+      index === 0 || checkpoints[index - 1].claimed === true, // This will ensure that the player can only claim the first checkpoint or a checkpoint that has already been claimed.
+    ];
+    if (checkpointDetectionRules.every((rule) => rule)) {
+      // if statement that checks if every rule in the checkpointDetectionRules array is true.
+      checkpoint.claim();
+      if (index === checkpoints.length - 1) {
+        // checks if the player has reached the last checkpoint.
+        isCheckpointCollisionDetectionActive = false;
+        showCheckpointScreen("You reached the final checkpoint!");
+        movePlayer("ArrowRight", 0, false);
+      } else if (
+        player.position.x >= checkpoint.position.x &&
+        player.position.x <= checkpoint.position.x + 40
+      ) {
+        showCheckpointScreen("You reached a checkpoint!");
+      }
+    }
   });
 };
 
@@ -217,6 +288,15 @@ const startGame = () => {
   startScreen.style.display = "none"; // to hide the startScreen container.
   //player.draw(); // To visualize the player on the screen, you need to draw it on the canvas. // delete player.draw() and call the animate function.
   animate(); // Before you can start moving your player across the screen, you will need to use the animate function.
+};
+
+// function that will show the checkpoint message when the player reaches a checkpoint.
+const showCheckpointScreen = (msg) => {
+  checkpointScreen.style.display = "block";
+  checkpointMessage.textContent = msg;
+  if (isCheckpointCollisionDetectionActive) {
+    setTimeout(() => (checkpointScreen.style.display = "none"), 2000);
+  }
 };
 
 startBtn.addEventListener("click", startGame); // add the functionality for the start game button.
