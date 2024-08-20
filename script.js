@@ -63,12 +63,65 @@ class Player {
   }
 }
 
+// platforms and platform logic.
+class Platform {
+  constructor(x, y) {
+    /*
+    When working with objects where the property name and value are the same, you can use the shorthand property name syntax. This syntax allows you to omit the property value if it is the same as the property name.
+    Example Code
+    // using shorthand property name syntax
+    obj = {
+      a, b, c
+    }
+    The following code is the same as:
+    Example Code
+    obj = {
+      a: a,
+      b: b,
+      c: c
+    }
+    */
+    this.position = {
+      x,
+      y,
+    };
+    this.width = 200;
+    this.height = proportionalSize(40);
+  }
+  draw() {
+    ctx.fillStyle = "#acd157";
+    ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+  }
+}
+
 const player = new Player();
+
+// list of positions for the platforms.
+const platformPositions = [
+  { x: 500, y: proportionalSize(450) },
+  { x: 700, y: proportionalSize(400) },
+  { x: 850, y: proportionalSize(350) },
+  { x: 900, y: proportionalSize(350) },
+  { x: 1050, y: proportionalSize(150) },
+  { x: 2500, y: proportionalSize(450) },
+  { x: 2900, y: proportionalSize(400) },
+  { x: 3150, y: proportionalSize(350) },
+  { x: 3900, y: proportionalSize(450) },
+  { x: 4200, y: proportionalSize(400) },
+  { x: 4400, y: proportionalSize(200) },
+  { x: 4700, y: proportionalSize(150) },
+];
+
+// list of new platform instances using the Platform class. You will later reference this list to draw the platforms on the canvas.
+const platforms = platformPositions.map(
+  (platform) => new Platform(platform.x, platform.y)
+);
 
 // functionality for moving the player across the screen
 const animate = () => {
   requestAnimationFrame(animate); // The requestAnimationFrame() web API, takes in a callback and is used to update the animation on the screen. The animate function will be responsible for updating the player's position and continually drawing it on the canvas.
   ctx.clearRect(0, 0, canvas.width, canvas.height); // As the player moves through the game, you will need to clear the canvas before rendering the next frame of the animation. You can use the clearRect() Web API to accomplish this. It takes in an x, y, width, and height arguments.
+  platforms.forEach((platform) => platform.draw()); // to draw each of the platforms onto the canvas.
   player.update(); // to update the player's position as it moves throughout the game.
   if (keys.rightKey.pressed && player.position.x < proportionalSize(400)) {
     // to add the logic for increasing or decreasing a player's velocity based on if they move to the left or right of the screen. You need to use the proportionalSize function here to make sure the player's x position is always proportional to the screen size. // Remember that the this keyword should not be used here because that is only for the Player class and not for the player object.
@@ -80,7 +133,45 @@ const animate = () => {
     player.velocity.x = -5;
   } else {
     player.velocity.x = 0;
+    // If you try to start the game, you will notice that the platforms are rendered on the screen. But as the player moves to the right, the platform does not move with it. To fix this issue, you will need to update the platform's x position as the player moves across the screen.
+    if (keys.rightKey.pressed && isCheckpointCollisionDetectionActive) {
+      platforms.forEach((platform) => {
+        platform.position.x -= 5;
+      });
+    } else if (keys.leftKey.pressed && isCheckpointCollisionDetectionActive) {
+      platforms.forEach((platform) => {
+        platform.position.x += 5;
+      });
+    }
   }
+  // When you start the game, you will notice that the position of the platforms is animating alongside the player. But if you try to jump below one of the platforms, then you will jump right through it. To fix this issue, you will need to add collision detection logic to the game.
+  platforms.forEach((platform) => {
+    const collisionDetectionRules = [
+      player.position.y + player.height <= platform.position.y,
+      player.position.y + player.height + player.velocity.y >=
+        platform.position.y,
+      player.position.x >= platform.position.x - player.width / 2,
+      player.position.x <=
+        platform.position.x + platform.width - player.width / 3,
+    ];
+    if (collisionDetectionRules.every((rule) => rule)) {
+      // if statement that checks if every rule in the collisionDetectionRules array is truthy.
+      player.velocity.y = 0;
+      return;
+    }
+    const platformDetectionRules = [
+      player.position.x >= platform.position.x - player.width / 2,
+      player.position.x <=
+        platform.position.x + platform.width - player.width / 3,
+      player.position.y + player.height >= platform.position.y,
+      player.position.y <= platform.position.y + platform.height,
+    ];
+
+    if (platformDetectionRules.every((rule) => rule)) {
+      player.position.y = platform.position.y + player.height;
+      player.velocity.y = gravity;
+    } // Now, when you start the game, you will be able to jump underneath the platform and collide with it.
+  });
 };
 
 // To manage the player's movement in the game, you will need to monitor when the left and right arrow keys are pressed.
