@@ -65,11 +65,75 @@ class Player {
 
 const player = new Player();
 
+// functionality for moving the player across the screen
+const animate = () => {
+  requestAnimationFrame(animate); // The requestAnimationFrame() web API, takes in a callback and is used to update the animation on the screen. The animate function will be responsible for updating the player's position and continually drawing it on the canvas.
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // As the player moves through the game, you will need to clear the canvas before rendering the next frame of the animation. You can use the clearRect() Web API to accomplish this. It takes in an x, y, width, and height arguments.
+  player.update(); // to update the player's position as it moves throughout the game.
+  if (keys.rightKey.pressed && player.position.x < proportionalSize(400)) {
+    // to add the logic for increasing or decreasing a player's velocity based on if they move to the left or right of the screen. You need to use the proportionalSize function here to make sure the player's x position is always proportional to the screen size. // Remember that the this keyword should not be used here because that is only for the Player class and not for the player object.
+    player.velocity.x = 5;
+  } else if (
+    keys.leftKey.pressed &&
+    player.position.x > proportionalSize(100)
+  ) {
+    player.velocity.x = -5;
+  } else {
+    player.velocity.x = 0;
+  }
+};
+
+// To manage the player's movement in the game, you will need to monitor when the left and right arrow keys are pressed.
+const keys = {
+  rightKey: { pressed: false },
+  leftKey: { pressed: false },
+};
+
+// functionality that will be responsible for moving the player across the screen.
+const movePlayer = (key, xVelocity, isPressed) => {
+  if (!isCheckpointCollisionDetectionActive) {
+    // In the game, the player will interact with different checkpoints. If the isCheckpointCollisionDetectionActive is false, then you will need to stop the player's movements on the x and y axes.
+    player.velocity.x = 0;
+    player.velocity.y = 0;
+    return;
+  }
+  switch (key) {
+    case "ArrowLeft": // when the left arrow key is pressed
+      keys.leftKey.pressed = isPressed;
+      if (xVelocity === 0) {
+        player.velocity.x = xVelocity;
+      }
+      player.velocity.x -= xVelocity;
+      break;
+    case "ArrowUp": // The player can jump up by using the up arrow key or the spacebar
+    case " ":
+    case "Spacebar":
+      player.velocity.y -= 8;
+      break;
+    case "ArrowRight": // / when the right arrow key is pressed
+      keys.rightKey.pressed = isPressed;
+      if (xVelocity === 0) {
+        player.velocity.x = xVelocity;
+      }
+      player.velocity.x += xVelocity;
+      break;
+  }
+};
+
 // to see your new player drawn on the screen.
 const startGame = () => {
   canvas.style.display = "block"; // to display the canvas element
   startScreen.style.display = "none"; // to hide the startScreen container.
-  player.draw(); // To visualize the player on the screen, you need to draw it on the canvas.
+  //player.draw(); // To visualize the player on the screen, you need to draw it on the canvas. // delete player.draw() and call the animate function.
+  animate(); // Before you can start moving your player across the screen, you will need to use the animate function.
 };
 
 startBtn.addEventListener("click", startGame); // add the functionality for the start game button.
+
+// event listeners that will be responsible for calling the movePlayer function.
+window.addEventListener("keydown", ({ key }) => {
+  movePlayer(key, 8, true);
+});
+window.addEventListener("keyup", ({ key }) => {
+  movePlayer(key, 0, false);
+});
